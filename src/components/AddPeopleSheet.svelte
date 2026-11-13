@@ -9,7 +9,7 @@
 
   const inEvent = $derived(new Set(event.people.map((r) => r.personId)));
   const others = $derived(app.d.people.filter((p) => !inEvent.has(p.id)).sort((a, b) => a.name.localeCompare(b.name)));
-  const groups = $derived(groupBy(others, (p) => p.family));
+  const groups = $derived(groupBy(others, (p) => p.family, app.d.settings.familyOrder));
   const fams = $derived(families(app.d));
 
   let picked = $state<string[]>([]);

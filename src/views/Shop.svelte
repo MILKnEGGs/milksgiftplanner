@@ -2,6 +2,7 @@
   // Across every event that isn't put away: what to buy (by store), what to wrap, and what to give.
   import GiftSheet from '../components/GiftSheet.svelte';
   import Icon from '../components/Icon.svelte';
+  import ReorderSheet from '../components/ReorderSheet.svelte';
   import TopBar from '../components/TopBar.svelte';
   import { allGifts, groupBy, money, storeOf, type Spot } from '../lib/data';
   import { app, hush, save, secret, toast } from '../lib/store.svelte';
@@ -20,7 +21,11 @@
   });
   const shown = $derived(spots.filter((s) => s.gift.status === WANT[tab]));
   // To buy: by store, like a shopping trip. To wrap or give: by person.
-  const groups = $derived(tab === 'buy' ? groupBy(shown, (s) => storeOf(s.gift)) : groupBy(shown, (s) => s.person.name));
+  const groups = $derived(
+    tab === 'buy' ? groupBy(shown, (s) => storeOf(s.gift), app.d.settings.storeOrder) : groupBy(shown, (s) => s.person.name),
+  );
+  const stores = $derived(tab === 'buy' ? groups.map(([k]) => k).filter(Boolean) : []);
+  let ordering = $state(false);
   const many = $derived(new Set(spots.map((s) => s.event.id)).size > 1);
 
   function done(s: Spot) {
@@ -66,7 +71,10 @@
     </div>
   {:else}
     {#if tab === 'buy'}
-      <p class="muted small" style="margin:0 4px">These are your ideas. Tick one when you buy it. Not every idea needs buying!</p>
+      <div class="row nowrap">
+        <p class="muted small" style="margin:0 4px;flex:1">These are your ideas. Tick one when you buy it. Not every idea needs buying!</p>
+        {#if stores.length > 1}<button class="btn small" onclick={() => (ordering = true)}>↕ Stores</button>{/if}
+      </div>
     {/if}
     {#each groups as [key, list] (key)}
       <section class="group">
@@ -104,6 +112,16 @@
   {/if}
 </main>
 
+{#if ordering}
+  <ReorderSheet
+    title="Reorder stores"
+    help="Put them in the order you shop. Stores you add later go after these, A–Z."
+    names={stores}
+    bind:order={app.d.settings.storeOrder}
+    onclose={() => (ordering = false)}
+  />
+{/if}
+
 {#if open}
   <GiftSheet recipient={open.recipient} gift={open.gift} who={open.person.name} onclose={() => (open = undefined)} />
 {/if}
@@ -115,6 +133,10 @@
   }
   .gname {
     font-weight: 800;
+  }
+  .nowrap {
+    flex-wrap: nowrap;
+    align-items: center;
   }
   .grow {
     flex: 1;

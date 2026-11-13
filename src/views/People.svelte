@@ -1,12 +1,15 @@
 <script lang="ts">
   // Everyone I buy for, grouped by family: sizes, birthdays and an idea jar for each.
+  import ReorderSheet from '../components/ReorderSheet.svelte';
   import TopBar from '../components/TopBar.svelte';
   import { families, groupBy, newPerson, nextBirthday, sizesText, turning, whenText } from '../lib/data';
   import { app, go, save } from '../lib/store.svelte';
 
   const people = $derived([...app.d.people].sort((a, b) => a.name.localeCompare(b.name)));
-  const groups = $derived(groupBy(people, (p) => p.family));
-  const tagged = $derived(families(app.d).length > 0);
+  const groups = $derived(groupBy(people, (p) => p.family, app.d.settings.familyOrder));
+  const fams = $derived(families(app.d));
+  const tagged = $derived(fams.length > 0);
+  let ordering = $state(false);
 
   function add() {
     const n = prompt('Who do you buy gifts for? (e.g. Emma)')?.trim();
@@ -18,7 +21,11 @@
   }
 </script>
 
-<TopBar title="People" />
+<TopBar title="People">
+  {#if fams.length > 1}
+    <button class="icon-btn" aria-label="Reorder families" onclick={() => (ordering = true)}>↕</button>
+  {/if}
+</TopBar>
 
 <main class="page stack">
   {#if !people.length}
@@ -46,6 +53,16 @@
     {/each}
   {/each}
 </main>
+
+{#if ordering}
+  <ReorderSheet
+    title="Reorder families"
+    help="Put your own family first. Families show in this order here and on your events."
+    names={fams}
+    bind:order={app.d.settings.familyOrder}
+    onclose={() => (ordering = false)}
+  />
+{/if}
 
 {#if people.length}
   <button class="fab" onclick={add}>+ Add person</button>

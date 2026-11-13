@@ -3,6 +3,7 @@
   import AddPeopleSheet from '../components/AddPeopleSheet.svelte';
   import EventSheet from '../components/EventSheet.svelte';
   import Icon from '../components/Icon.svelte';
+  import ReorderSheet from '../components/ReorderSheet.svelte';
   import Sheet from '../components/Sheet.svelte';
   import TopBar from '../components/TopBar.svelte';
   import { covered, duplicateEvent, eventTotals, groupBy, money, recipientTotals, whenText } from '../lib/data';
@@ -13,7 +14,7 @@
 
   const event = $derived(eventById(id));
   const t = $derived(event ? eventTotals(event) : undefined);
-  let sheet = $state<'menu' | 'edit' | 'add'>();
+  let sheet = $state<'menu' | 'edit' | 'add' | 'order'>();
   let filter = $state<'all' | 'todo'>('all');
 
   const rows = $derived(
@@ -22,7 +23,19 @@
       .filter((x) => x.p && (filter === 'all' || !covered(x.r)))
       .sort((a, b) => a.p.name.localeCompare(b.p.name)),
   );
-  const groups = $derived(app.d.settings.byFamily ? groupBy(rows, (x) => x.p.family) : [['', rows] as [string, typeof rows]]);
+  const groups = $derived(
+    app.d.settings.byFamily ? groupBy(rows, (x) => x.p.family, app.d.settings.familyOrder) : [['', rows] as [string, typeof rows]],
+  );
+  /** Families in this event, in order, for reordering. */
+  const eventFamilies = $derived(
+    groupBy(
+      (event?.people ?? []).map((r) => personById(r.personId)?.family ?? ''),
+      (f) => f,
+      app.d.settings.familyOrder,
+    )
+      .map(([f]) => f)
+      .filter(Boolean),
+  );
   const hasFamilies = $derived(rows.some((x) => x.p.family.trim()));
 
   function line(r: Recipient): string {
@@ -108,10 +121,15 @@
         </div>
       </div>
       {#if hasFamilies || app.d.settings.byFamily}
-        <label class="toggle slim">
-          <input type="checkbox" checked={app.d.settings.byFamily} onchange={(e) => setByFamily(e.currentTarget.checked)} />
-          <span><strong>Group by family</strong></span>
-        </label>
+        <div class="row nowrap">
+          <label class="toggle slim" style="flex:1">
+            <input type="checkbox" checked={app.d.settings.byFamily} onchange={(e) => setByFamily(e.currentTarget.checked)} />
+            <span><strong>Group by family</strong></span>
+          </label>
+          {#if app.d.settings.byFamily && eventFamilies.length > 1}
+            <button class="btn small" onclick={() => (sheet = 'order')}>↕ Reorder</button>
+          {/if}
+        </div>
       {/if}
     {/if}
 
@@ -174,6 +192,14 @@
     <EventSheet {event} onclose={() => (sheet = undefined)} />
   {:else if sheet === 'add'}
     <AddPeopleSheet {event} onclose={() => (sheet = undefined)} />
+  {:else if sheet === 'order'}
+    <ReorderSheet
+      title="Reorder families"
+      help="Families show in this order everywhere you group by family."
+      names={eventFamilies}
+      bind:order={app.d.settings.familyOrder}
+      onclose={() => (sheet = undefined)}
+    />
   {/if}
 {/if}
 
@@ -188,6 +214,9 @@
   .tap {
     text-decoration: none;
     color: inherit;
+  }
+  .nowrap {
+    flex-wrap: nowrap;
   }
   .slim {
     padding: 8px 12px;

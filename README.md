@@ -8,6 +8,7 @@ A to-do list for gift shopping, so nobody gets forgotten.
   budget), **Wrapped** and **Given**. Tap a gift's tag to move it along. "Where I hid it" for bought gifts, and small notes.
 - **Shopping**: every idea across your events grouped by store, plus what's still to wrap (with where it's hidden) and to give.
 - **People**: family tags (group an event by family), birthdays, sizes and an idea jar. People carry across events.
+- **Your own order**: drag families (e.g. your own family first) and stores (the order you shop) into place.
 - **Duplicate** an event to start the next one exactly as it is.
 - **Paste a Gift List**: paste a list shared from [Milk's Gift List](https://milkneggs.github.io/milksgiftlist/) into a
   person and its gifts become ideas (gifts someone else is getting are left unticked).

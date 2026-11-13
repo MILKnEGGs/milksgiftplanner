@@ -4,6 +4,8 @@ import {
   duplicateEvent,
   eventTotals,
   groupBy,
+  newOrder,
+  orderNames,
   money,
   newEvent,
   newGift,
@@ -57,6 +59,21 @@ describe('budgets', () => {
       ['b', 2],
       ['', 1],
     ]);
+  });
+});
+
+describe('ordering', () => {
+  it('puts chosen families and stores first, the rest A–Z, blank last', () => {
+    expect(orderNames(['Zoo', '', 'Us', 'Kims'], ['us'])).toEqual(['Us', 'Kims', 'Zoo', '']);
+    expect(groupBy(['Target', 'Costco', '', 'Target'], (x) => x, ['Target']).map(([k, v]) => [k, v.length])).toEqual([
+      ['Target', 2],
+      ['Costco', 1],
+      ['', 1],
+    ]);
+  });
+
+  it('remembers names that are not on screen when reordering', () => {
+    expect(newOrder(['B', 'A'], ['A', 'C', 'b'])).toEqual(['B', 'A', 'C']);
   });
 });
 

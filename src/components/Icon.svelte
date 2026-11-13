@@ -17,6 +17,7 @@
     link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
     star: 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9L12 3.5Z',
     send: 'M4 12 20 4l-4 16-4-7-8-1Zm8 1 8-9',
+    grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
     eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
     eyeoff: 'M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.8M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.8 9.8 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2',
     people: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2 21a7 7 0 0 1 14 0M16 3.3a4 4 0 0 1 0 7.4M18.5 14.5A7 7 0 0 1 22 21',
@@ -24,7 +25,7 @@
 
   let { name, size = 22, stroke = 2, fill = false }: { name: keyof typeof PATHS; size?: number; stroke?: number; fill?: boolean } = $props();
   // Dots need a heavier stroke to read as dots.
-  const dots = $derived(name === 'more');
+  const dots = $derived(name === 'more' || name === 'grip');
 </script>
 
 <svg

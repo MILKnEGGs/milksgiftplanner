@@ -10,9 +10,10 @@ export const uid = (n = 10): string => {
 };
 
 export function newData(): Data {
-  return { version: 1, events: [], people: [], settings: { theme: 'auto', kidSafe: false, byFamily: false } };
+  return { version: 1, events: [], people: [], settings: { theme: 'auto', kidSafe: false, byFamily: false, familyOrder: [], storeOrder: [] } };
 }
 
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
 const cents = (v: unknown) => (typeof v === 'number' && v >= 0 ? v : undefined);
 const STATUSES: GiftStatus[] = ['idea', 'bought', 'wrapped', 'given'];
 
@@ -24,7 +25,12 @@ export function normalize(raw: unknown): Data {
   const known = new Set(people.map((p) => p.id));
   return {
     version: 1,
-    settings: { ...base.settings, ...(d?.settings ?? {}) },
+    settings: {
+      ...base.settings,
+      ...(d?.settings ?? {}),
+      familyOrder: strings(d?.settings?.familyOrder),
+      storeOrder: strings(d?.settings?.storeOrder),
+    },
     people,
     events: (Array.isArray(d?.events) ? d.events : []).map((e) => normalizeEvent(e, known)),
   };
@@ -106,9 +112,15 @@ export const personById = (d: Data, id: string): Person | undefined => d.people.
 
 export const findPerson = (d: Data, name: string): Person | undefined => d.people.find((p) => same(p.name, name));
 
-/** Family tags in use, A–Z. */
-export const families = (d: Data): string[] =>
-  [...new Set(d.people.map((p) => p.family.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+/** Family tags in use, in the chosen order. */
+export const families = (d: Data): string[] => {
+  const seen = new Map<string, string>();
+  for (const p of d.people) {
+    const f = p.family.trim();
+    if (f && !seen.has(f.toLowerCase())) seen.set(f.toLowerCase(), f);
+  }
+  return orderNames([...seen.values()], d.settings.familyOrder);
+};
 
 export const sizesText = (sizes: Size[]): string =>
   sizes
@@ -116,15 +128,40 @@ export const sizesText = (sizes: Size[]): string =>
     .map((z) => (z.label.trim() ? `${z.label.trim()} ${z.value.trim()}` : z.value.trim()))
     .join(' · ');
 
-/** Groups by a key (a family tag, a store) A–Z; blank keys come last under "". */
-export function groupBy<T>(items: T[], key: (t: T) => string): [string, T[]][] {
+/**
+ * Puts names in the order the user chose; names not in it follow A–Z, and blank comes last.
+ * Matching ignores case, so "the kims" and "The Kims" share a place.
+ */
+export function orderNames(names: string[], order: string[] = []): string[] {
+  const rank = new Map(order.map((n, i) => [n.trim().toLowerCase(), i]));
+  const r = (n: string) => (!n ? Infinity : (rank.get(n.toLowerCase()) ?? order.length));
+  return [...names].sort((a, b) => r(a) - r(b) || (!a ? 1 : !b ? -1 : a.localeCompare(b)));
+}
+
+/** Groups by a key (a family tag, a store) in the chosen order, then A–Z; blank keys come last under "". */
+export function groupBy<T>(items: T[], key: (t: T) => string, order: string[] = []): [string, T[]][] {
   const m = new Map<string, T[]>();
   for (const t of items) {
     const f = key(t).trim();
     m.set(f, [...(m.get(f) ?? []), t]);
   }
-  return [...m].sort(([a], [b]) => (!a ? 1 : !b ? -1 : a.localeCompare(b)));
+  return orderNames([...m.keys()], order).map((k) => [k, m.get(k)!]);
 }
+
+/**
+ * A new order after reordering the names on screen. Names saved before that aren't on screen right
+ * now keep their place after them, so reordering one event's families doesn't forget the others.
+ */
+export const newOrder = (shown: string[], old: string[]): string[] => {
+  const seen = new Set(shown.map((n) => n.toLowerCase()));
+  return [...shown, ...old.filter((n) => !seen.has(n.toLowerCase()))];
+};
+
+/** Moves an array element from one index to another. */
+export const move = <T>(arr: T[], from: number, to: number): void => {
+  const [x] = arr.splice(from, 1);
+  arr.splice(to, 0, x);
+};
 
 // ---------------------------------------------------------------------------------------------
 // Gifts and budgets

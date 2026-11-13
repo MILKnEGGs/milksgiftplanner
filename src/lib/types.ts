@@ -77,6 +77,10 @@ export interface Settings {
   kidSafe: boolean;
   /** Event pages group people by family tag. */
   byFamily: boolean;
+  /** The order families are shown in when grouped (others follow A–Z). */
+  familyOrder: string[];
+  /** The order stores are shown in on the shopping list (others follow A–Z). */
+  storeOrder: string[];
 }
 
 export interface Data {
